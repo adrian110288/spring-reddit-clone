@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class AuthService {
     private final Validator validator;
 
     @Transactional
-    public void signup(RegisterRequest registerRequest) {
+    public VerificationToken signup(RegisterRequest registerRequest) {
 
         Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(registerRequest);
 
@@ -56,23 +57,41 @@ public class AuthService {
 
         userRepository.save(user);
 
-        String token = generateVerificationToken(user);
+        VerificationToken verificationToken = generateVerificationToken(user);
+
+        verificationTokenRepository.save(verificationToken);
 
 //        mailService.sendEmail(new NotificationEmail(
 //                "Please activate your account",
 //                registerRequest.getEmail(),
-//                "Thank you for signing up! Please click on the below url to activate your account: " + "http://localhost:8080/api/auth/accountVerification/" + token
+//                "Thank you for signing up! Please click on the below url to activate your account: " + "http://localhost:8080/api/auth/accountVerification/" + verificationToken.getToken()
 //        ));
+
+        return verificationToken;
     }
 
-    private String generateVerificationToken(User user) {
+    private VerificationToken generateVerificationToken(User user) {
         String token = UUID.randomUUID().toString();
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
         verificationToken.setUser(user);
 
-        verificationTokenRepository.save(verificationToken);
+        return verificationToken;
+    }
 
-        return token;
+    public void verifyAccount(String token) {
+        Optional<VerificationToken> verificationToken = verificationTokenRepository.findByToken(token);
+        verificationToken.orElseThrow(() -> new SpringRedditException("Invalid token!"));
+        fetchUserAndEnabled(verificationToken.get());
+    }
+
+    @Transactional
+    private void fetchUserAndEnabled(VerificationToken verificationToken) {
+        String username = verificationToken.getUser().getUsername();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new SpringRedditException("User not found with name " + username + "!"));
+
+        user.setEnabled(true);
+        userRepository.save(user);
     }
 }
