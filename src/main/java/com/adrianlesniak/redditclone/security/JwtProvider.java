@@ -3,7 +3,8 @@ package com.adrianlesniak.redditclone.security;
 import com.adrianlesniak.redditclone.exception.SpringRedditException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
@@ -23,11 +24,18 @@ public class JwtProvider {
 
     private KeyStore keyStore;
 
-    @Value("@{jwt.expiration.time}")
+    @Autowired
+    private Environment environment;
+
     private Long jwtExpirationInMillis;
+
 
     @PostConstruct
     public void init() {
+
+        jwtExpirationInMillis =
+                environment.getProperty("jwt.expiration.time", Long.TYPE);
+
         try {
             keyStore = KeyStore.getInstance("JKS");
             InputStream resourceAsStream = getClass().getResourceAsStream("/springblog.jks");
