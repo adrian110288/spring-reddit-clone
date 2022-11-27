@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,11 +35,11 @@ public class CommentsService {
 
     private CommentMapper commentMapper;
 
-    public void save(CommentDto commentDto) {
+    public void save(CommentDto commentDto, Principal principal) {
         Post post = postRepository.findById(commentDto.getPostId())
                 .orElseThrow(() -> new PostNotFoundException("Post not found with id " + commentDto.getPostId()));
 
-        Comment comment = commentMapper.map(commentDto, post, authService.getCurrentUser());
+        Comment comment = commentMapper.map(commentDto, post, authService.getCurrentUser(principal));
 
         commentRepository.save(comment);
     }

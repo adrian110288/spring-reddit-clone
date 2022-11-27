@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.OK;
@@ -19,8 +20,8 @@ public class CommentsController {
     private CommentsService commentsService;
 
     @PostMapping
-    public ResponseEntity createComment(@RequestBody CommentDto commentDto) {
-        commentsService.save(commentDto);
+    public ResponseEntity createComment(@RequestBody CommentDto commentDto, Principal principal) {
+        commentsService.save(commentDto, principal);
 
         return new ResponseEntity(HttpStatus.CREATED);
     }

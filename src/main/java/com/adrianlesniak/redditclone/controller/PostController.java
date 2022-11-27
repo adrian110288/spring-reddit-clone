@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -18,8 +19,8 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    public ResponseEntity createPost(@RequestBody PostRequest postRequest) {
-        postService.save(postRequest);
+    public ResponseEntity createPost(@RequestBody PostRequest postRequest, Principal principal) {
+        postService.save(postRequest, principal);
         return new ResponseEntity(HttpStatus.CREATED);
     }
 

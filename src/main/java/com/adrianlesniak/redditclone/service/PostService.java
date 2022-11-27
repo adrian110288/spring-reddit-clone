@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,13 +37,13 @@ public class PostService {
 
     private final PostMapper postMapper;
 
-    public void save(PostRequest postRequest) {
+    public void save(PostRequest postRequest, Principal principal) {
 
         Subreddit subreddit = subredditRepository
                 .findByName(postRequest.getSubredditName())
                 .orElseThrow(() -> new SubredditNotFoundException("Subreddit not found with name " + postRequest.getSubredditName()));
 
-        User user = authService.getCurrentUser();
+        User user = authService.getCurrentUser(principal);
         Post post = postMapper.map(postRequest, subreddit, user);
 
         postRepository.save(post);

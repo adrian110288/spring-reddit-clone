@@ -5,24 +5,22 @@ import com.adrianlesniak.redditclone.dto.LoginRequest;
 import com.adrianlesniak.redditclone.dto.RefreshTokenRequest;
 import com.adrianlesniak.redditclone.dto.RegisterRequest;
 import com.adrianlesniak.redditclone.exception.SpringRedditException;
+import com.adrianlesniak.redditclone.exception.UsernameNotFoundException;
 import com.adrianlesniak.redditclone.model.User;
 import com.adrianlesniak.redditclone.model.VerificationToken;
 import com.adrianlesniak.redditclone.repository.UserRepository;
 import com.adrianlesniak.redditclone.repository.VerificationTokenRepository;
-import com.adrianlesniak.redditclone.security.JwtProvider;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
+import java.security.Principal;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
@@ -44,8 +42,7 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
 
-    private final JwtProvider jwtProvider;
-
+    private final TokenService tokenService;
     private final RefreshTokenService refreshTokenService;
 
     @Transactional
@@ -116,32 +113,32 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
         );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtProvider.generateToken(authentication);
+        String token = tokenService.generateToken(authentication);
 
         return AuthenticationResponse.builder()
                 .token(token)
                 .refreshToken(refreshTokenService.generateRefreshToken().getToken())
-                .expiresAt(Instant.now().plusMillis(jwtProvider.getJwtExpirationInMillis()))
                 .username(loginRequest.getUsername())
                 .build();
     }
 
     @Transactional(readOnly = true)
-    public User getCurrentUser() {
-        UserDetails principal = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return userRepository.findByUsername(principal.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User name not found - " + principal.getUsername()));
+    public User getCurrentUser(Principal principal) {
+
+        // Instead of injecting Principal everywhere, this can be used
+        // SecurityContextHolder.getContext().getAuthentication()
+
+        return userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User name not found - " + principal.getName()));
     }
 
     public AuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         refreshTokenService.validateRefreshToken(refreshTokenRequest.getRefreshToken());
-        String token = jwtProvider.generateTokenWithUsername(refreshTokenRequest.getUserName());
+        String token = tokenService.getTokenWithUsername(refreshTokenRequest.getUserName());
 
         return AuthenticationResponse.builder()
                 .token(token)
                 .refreshToken(refreshTokenRequest.getRefreshToken())
-                .expiresAt(Instant.now().plusMillis(jwtProvider.getJwtExpirationInMillis()))
                 .username(refreshTokenRequest.getUserName())
                 .build();
     }

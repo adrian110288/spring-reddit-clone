@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.Principal;
 import java.util.Optional;
 
 @Service
@@ -26,12 +27,12 @@ public class VoteService {
     private final AuthService authService;
 
     @Transactional
-    public void vote(VoteDto voteDto) {
+    public void vote(VoteDto voteDto, Principal principal) {
 
         Post post = postRepository.findById(voteDto.getPostId())
                 .orElseThrow(() -> new PostNotFoundException("Post not found with id " + voteDto.getPostId()));
 
-        Optional<Vote> voteByPostAndUser = voteRepository.findTopByPostAndUserOrderByVoteIdDesc(post, authService.getCurrentUser());
+        Optional<Vote> voteByPostAndUser = voteRepository.findTopByPostAndUserOrderByVoteIdDesc(post, authService.getCurrentUser(principal));
 
         if (voteByPostAndUser.isPresent() &&
                 voteByPostAndUser.get().getVoteType().equals(voteDto.getVoteType())) {
@@ -44,15 +45,15 @@ public class VoteService {
             post.setVoteCount(post.getVoteCount() - 1);
         }
 
-        voteRepository.save(mapToVote(voteDto, post));
+        voteRepository.save(mapToVote(voteDto, post, principal));
         postRepository.save(post);
     }
 
-    private Vote mapToVote(VoteDto voteDto, Post post) {
+    private Vote mapToVote(VoteDto voteDto, Post post, Principal principal) {
         return Vote.builder()
                 .voteType(voteDto.getVoteType())
                 .post(post)
-                .user(authService.getCurrentUser())
+                .user(authService.getCurrentUser(principal))
                 .build();
     }
 }
