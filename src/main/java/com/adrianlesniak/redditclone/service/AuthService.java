@@ -6,6 +6,7 @@ import com.adrianlesniak.redditclone.dto.RefreshTokenRequest;
 import com.adrianlesniak.redditclone.dto.RegisterRequest;
 import com.adrianlesniak.redditclone.exception.SpringRedditException;
 import com.adrianlesniak.redditclone.exception.UsernameNotFoundException;
+import com.adrianlesniak.redditclone.model.Role;
 import com.adrianlesniak.redditclone.model.User;
 import com.adrianlesniak.redditclone.model.VerificationToken;
 import com.adrianlesniak.redditclone.repository.UserRepository;
@@ -67,6 +68,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setCreated(Instant.now());
         user.setEnabled(false);
+        user.setRole(Role.USER);
 
         userRepository.save(user);
 
