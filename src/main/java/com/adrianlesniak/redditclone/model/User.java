@@ -15,6 +15,7 @@ import static javax.persistence.GenerationType.IDENTITY;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "users")
 @Entity
 public class User {
     @Id
