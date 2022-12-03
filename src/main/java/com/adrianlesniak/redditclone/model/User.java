@@ -8,6 +8,7 @@ import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
+import java.io.Serializable;
 import java.time.Instant;
 
 import static javax.persistence.GenerationType.IDENTITY;
@@ -17,7 +18,13 @@ import static javax.persistence.GenerationType.IDENTITY;
 @NoArgsConstructor
 @Table(name = "users")
 @Entity
-public class User {
+/**
+ * When using @JoinTable with referencedColumnName that is not a primary key,
+ * then the referenced class needs to be marked Serializable
+ *
+ * e.g. Subreddit class references User by username (not PK)
+ */
+public class User implements Serializable {
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long userId;
